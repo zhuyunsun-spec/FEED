@@ -2,8 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#F5F1E8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>FEED Yourself 2026 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -13,6 +15,8 @@
             background-color: #F5F1E8;
             color: #2C2C2C;
             -webkit-tap-highlight-color: transparent;
+            /* 适配 iPhone 底部横条 */
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .font-mono { font-family: 'Space Mono', monospace; }
         
@@ -32,7 +36,7 @@
         
         .page {
             display: none;
-            min-height: calc(100vh - 140px);
+            min-height: calc(100vh - 160px);
         }
         .page.active {
             display: block;
@@ -117,9 +121,26 @@
         .date-display {
             font-variant-numeric: tabular-nums;
         }
+        
+        /* 底部导航适配 iPhone 安全区域 */
+        .safe-bottom-nav {
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            height: auto;
+            min-height: 64px;
+        }
+        
+        /* 使用说明弹窗 */
+        .modal-overlay {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .help-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fafaf9 100%);
+        }
     </style>
 </head>
-<body class="paper-texture pb-24">
+<body class="paper-texture">
 
     <!-- 顶部导航 - 显示完整日期 -->
     <header class="fixed top-0 left-0 right-0 z-50 glass border-b border-stone-200 px-4 py-3">
@@ -129,16 +150,19 @@
                 <span class="text-stone-500 font-normal date-display" id="headerDate">2026.04.03</span>
                 <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
-            <button onclick="goToToday()" class="text-xs font-mono bg-stone-800 text-white px-3 py-1.5 rounded-full hover:bg-stone-700 transition" id="todayBtn">
-                回到今天
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="showHelp()" class="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
+                <button onclick="goToToday()" class="text-xs font-mono bg-stone-800 text-white px-3 py-1.5 rounded-full hover:bg-stone-700 transition" id="todayBtn">
+                    回到今天
+                </button>
+            </div>
         </div>
         
         <!-- 月份选择器 -->
         <div id="monthPicker" class="hidden absolute top-full left-0 right-0 bg-white border-b border-stone-200 shadow-lg">
-            <div class="flex overflow-x-auto px-4 py-3 gap-3 max-w-md mx-auto" id="monthSelector">
-                <!-- 月份按钮由JS生成 -->
-            </div>
+            <div class="flex overflow-x-auto px-4 py-3 gap-3 max-w-md mx-auto" id="monthSelector"></div>
         </div>
     </header>
 
@@ -151,7 +175,7 @@
         </div>
     </div>
 
-    <main class="pt-32 px-4 max-w-md mx-auto space-y-6">
+    <main class="pt-32 px-4 max-w-md mx-auto space-y-6 pb-24">
 
         <!-- 今日视图 -->
         <div id="view-daily" class="page active space-y-6">
@@ -292,37 +316,53 @@
                 </div>
             </section>
 
-            <!-- 四维度评分 -->
+            <!-- 四维度评分 (带中文说明) -->
             <section class="grid grid-cols-2 gap-4">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                    <div class="flex items-center gap-2 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
                         <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                        <h3 class="text-xs font-bold text-stone-600">Functional</h3>
+                        <div>
+                            <h3 class="text-xs font-bold text-stone-600">Functional</h3>
+                            <p class="text-[10px] text-stone-400">身体机能/功能性</p>
+                        </div>
                     </div>
+                    <p class="text-[10px] text-stone-400 mb-3 leading-relaxed">食物是否满足身体需求？营养均衡度如何？</p>
                     <div class="flex flex-wrap gap-1" id="rating-Functional"></div>
                 </div>
                 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                    <div class="flex items-center gap-2 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
                         <div class="w-2 h-2 rounded-full bg-orange-400"></div>
-                        <h3 class="text-xs font-bold text-stone-600">Enough</h3>
+                        <div>
+                            <h3 class="text-xs font-bold text-stone-600">Enough</h3>
+                            <p class="text-[10px] text-stone-400">饱腹感/满足度</p>
+                        </div>
                     </div>
+                    <p class="text-[10px] text-stone-400 mb-3 leading-relaxed">吃得是否满足？饥饿感是否得到缓解？</p>
                     <div class="flex flex-wrap gap-1" id="rating-Enough"></div>
                 </div>
                 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                    <div class="flex items-center gap-2 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
                         <div class="w-2 h-2 rounded-full bg-pink-400"></div>
-                        <h3 class="text-xs font-bold text-stone-600">Emotion</h3>
+                        <div>
+                            <h3 class="text-xs font-bold text-stone-600">Emotion</h3>
+                            <p class="text-[10px] text-stone-400">情绪状态</p>
+                        </div>
                     </div>
+                    <p class="text-[10px] text-stone-400 mb-3 leading-relaxed">进食时的情绪如何？是否因情绪而吃？</p>
                     <div class="flex flex-wrap gap-1" id="rating-Emotion"></div>
                 </div>
                 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                    <div class="flex items-center gap-2 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
                         <div class="w-2 h-2 rounded-full bg-purple-400"></div>
-                        <h3 class="text-xs font-bold text-stone-600">Dig</h3>
+                        <div>
+                            <h3 class="text-xs font-bold text-stone-600">Dig</h3>
+                            <p class="text-[10px] text-stone-400">觉察/洞察</p>
+                        </div>
                     </div>
+                    <p class="text-[10px] text-stone-400 mb-3 leading-relaxed">对自己的饮食行为有多深的觉察？</p>
                     <div class="flex flex-wrap gap-1" id="rating-Dig"></div>
                 </div>
             </section>
@@ -514,13 +554,22 @@
                     <button onclick="clearData()" class="w-full py-3 text-red-500 text-xs hover:text-red-600 transition">清空所有记录</button>
                 </div>
             </section>
+            
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-stone-100">
+                <h2 class="text-sm font-bold text-stone-600 uppercase tracking-wider mb-4">关于</h2>
+                <div class="text-xs text-stone-500 space-y-2 leading-relaxed">
+                    <p>FEED Yourself 基于 SMART 原则与四维度觉察的饮食记录工具。</p>
+                    <p>数据仅存储于本地浏览器，建议定期导出备份。</p>
+                    <p>version 1.0.0</p>
+                </div>
+            </section>
         </div>
 
     </main>
 
-    <!-- 底部导航 -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-6 py-2 z-50">
-        <div class="flex justify-around items-center max-w-md mx-auto">
+    <!-- 底部导航 (适配安全区域) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-6 safe-bottom-nav z-50">
+        <div class="flex justify-around items-center max-w-md mx-auto h-full">
             <button onclick="switchPage('tracker')" class="nav-btn flex flex-col items-center gap-1 p-2 text-stone-800" data-page="tracker">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 <span class="text-[10px]">记录</span>
@@ -532,12 +581,108 @@
         </div>
     </nav>
 
+    <!-- 使用说明弹窗 -->
+    <div id="helpModal" class="fixed inset-0 z-[60] hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeHelp()"></div>
+        <div class="absolute inset-x-4 top-20 bottom-20 max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <h2 class="text-lg font-bold text-stone-800">使用说明</h2>
+                <button onclick="closeHelp()" class="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- 快速开始 -->
+                <div class="help-card rounded-2xl p-4 border border-stone-100">
+                    <h3 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-stone-800 text-white flex items-center justify-center text-xs">1</span>
+                        快速开始
+                    </h3>
+                    <ul class="text-xs text-stone-600 space-y-1.5 leading-relaxed">
+                        <li>• 在"我的"页面设置你的体重和身高</li>
+                        <li>• 系统会自动计算每日摄入目标（体重×25.2）</li>
+                        <li>• 和饮水目标（体重×40ml）</li>
+                    </ul>
+                </div>
+                
+                <!-- 四维度评分 -->
+                <div class="help-card rounded-2xl p-4 border border-stone-100">
+                    <h3 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">2</span>
+                        四维度评分说明
+                    </h3>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex gap-2">
+                            <span class="font-bold text-green-600 w-20">Functional</span>
+                            <span class="text-stone-600">身体机能：食物的营养均衡度，是否满足身体需求</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="font-bold text-orange-500 w-20">Enough</span>
+                            <span class="text-stone-600">饱腹感：进食后的满足程度，是否过饱或饥饿</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="font-bold text-pink-500 w-20">Emotion</span>
+                            <span class="text-stone-600">情绪状态：进食时的情绪，是否因焦虑/压力而吃</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="font-bold text-purple-500 w-20">Dig</span>
+                            <span class="text-stone-600">觉察：对自己饮食行为的认知和反思深度</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 记录建议 -->
+                <div class="help-card rounded-2xl p-4 border border-stone-100">
+                    <h3 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs">3</span>
+                        记录建议
+                    </h3>
+                    <ul class="text-xs text-stone-600 space-y-1.5 leading-relaxed">
+                        <li>• <strong>热量：</strong>不必精确到个位数，估算即可</li>
+                        <li>• <strong>饮水：</strong>包括水、茶、黑咖啡，不包括含糖饮料</li>
+                        <li>• <strong>睡眠：</strong>记录实际睡眠时间，非卧床时间</li>
+                        <li>• <strong>有氧：</strong>快走、慢跑、游泳、骑行等持续运动</li>
+                        <li>• <strong>饮食结构：</strong>碳水+蛋白质+脂肪=100%</li>
+                    </ul>
+                </div>
+                
+                <!-- 数据安全 -->
+                <div class="help-card rounded-2xl p-4 border border-stone-100">
+                    <h3 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs">!</span>
+                        数据安全
+                    </h3>
+                    <p class="text-xs text-stone-600 leading-relaxed">
+                        所有数据仅保存在你的手机本地，清除浏览器数据会导致记录丢失。建议定期在"我的"页面导出备份。
+                    </p>
+                </div>
+            </div>
+            <div class="p-4 border-t border-stone-100 bg-stone-50">
+                <button onclick="closeHelp()" class="w-full py-3 bg-stone-800 text-white rounded-xl text-sm font-medium">开始使用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 首次使用引导 (可选) -->
+    <div id="firstTimeModal" class="fixed inset-0 z-[70] hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="absolute inset-x-4 top-1/2 transform -translate-y-1/2 max-w-sm mx-auto bg-white rounded-3xl shadow-2xl p-6 text-center">
+            <div class="w-16 h-16 bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">FEED</div>
+            <h2 class="text-xl font-bold text-stone-800 mb-2">欢迎来到 FEED Yourself</h2>
+            <p class="text-sm text-stone-500 mb-6 leading-relaxed">基于 SMART 原则的饮食记录工具，帮助你建立健康的饮食觉察习惯。</p>
+            <div class="space-y-2">
+                <button onclick="startTutorial()" class="w-full py-3 bg-stone-800 text-white rounded-xl text-sm font-medium">查看使用说明</button>
+                <button onclick="closeFirstTime()" class="w-full py-3 text-stone-500 text-sm">直接开始</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-stone-800 text-white px-4 py-2 rounded-full text-sm opacity-0 transition-opacity duration-300 pointer-events-none z-50 shadow-lg"></div>
 
     <script>
         // 全局状态
         let currentMonth = 4;
-        let currentDate = new Date().toISOString().split('T')[0]; // 格式: 2026-04-03
+        let currentDate = new Date().toISOString().split('T')[0];
         let userProfile = { weight: 60, height: 170 };
         
         const Storage = {
@@ -570,6 +715,12 @@
                 const all = this.get();
                 all.profile = { ...all.profile, ...profile };
                 this.set(all);
+            },
+            hasSeenTutorial() {
+                return localStorage.getItem('feed_seen_tutorial') === 'true';
+            },
+            setSeenTutorial() {
+                localStorage.setItem('feed_seen_tutorial', 'true');
             }
         };
 
@@ -580,6 +731,11 @@
             initMonths();
             loadToday();
             updateHeaderDate();
+            
+            // 检查是否首次使用
+            if (!Storage.hasSeenTutorial()) {
+                document.getElementById('firstTimeModal').classList.remove('hidden');
+            }
         });
 
         function initApp() {
@@ -588,8 +744,6 @@
             document.getElementById('userWeight').value = userProfile.weight || '';
             document.getElementById('userHeight').value = userProfile.height || '';
             updateCalculations();
-            
-            // 检查是否是今天
             checkIfToday();
         }
 
@@ -600,7 +754,6 @@
                 btn.style.display = 'none';
             } else {
                 btn.style.display = 'block';
-                btn.textContent = '回到今天';
             }
         }
 
@@ -619,18 +772,14 @@
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
-            
-            // 更新顶部显示为: 2026.04.03
             document.getElementById('headerDate').textContent = `${year}.${month}.${day}`;
             
-            // 更新月份选择器状态
             document.querySelectorAll('.month-btn').forEach(btn => {
                 btn.classList.remove('active', 'border-stone-800');
                 btn.classList.add('border-stone-200', 'text-stone-600');
             });
             
-            // 高亮当前月份
-            const monthIndex = date.getMonth() - 3; // 4月开始，索引0
+            const monthIndex = date.getMonth() - 3;
             if (monthIndex >= 0 && monthIndex < 9) {
                 const btns = document.querySelectorAll('.month-btn');
                 if (btns[monthIndex]) {
@@ -661,7 +810,7 @@
                 container.innerHTML = '';
                 for (let i = 1; i <= 10; i++) {
                     const dot = document.createElement('div');
-                    dot.className = 'w-5 h-5 rounded-full border border-stone-300 cursor-pointer rating-dot flex items-center justify-center text-[8px] text-stone-400 hover:bg-stone-100';
+                    dot.className = 'w-6 h-6 rounded-full border border-stone-300 cursor-pointer rating-dot flex items-center justify-center text-[10px] text-stone-400 hover:bg-stone-100';
                     dot.textContent = i;
                     dot.onclick = () => setRating(cat, i);
                     container.appendChild(dot);
@@ -707,7 +856,6 @@
             showToast('个人信息已更新');
         }
 
-        // 加载今日数据
         function loadToday() {
             const record = Storage.getRecord(currentDate);
             
@@ -729,7 +877,6 @@
                 updateMacroBars();
             }
             
-            // 重置评分显示
             document.querySelectorAll('.rating-dot').forEach(d => d.classList.remove('active'));
             Object.keys(record.ratings).forEach(cat => {
                 if (record.ratings[cat] > 0) highlightRating(cat, record.ratings[cat]);
@@ -740,7 +887,6 @@
             document.getElementById('dailySteps').value = record.steps || '';
             document.getElementById('dailyNote').value = record.note || '';
             
-            // 更新上次保存时间
             const lastSaved = localStorage.getItem('feed_last_saved_' + currentDate);
             if (lastSaved) {
                 document.getElementById('lastSaved').textContent = '上次保存: ' + lastSaved;
@@ -751,11 +897,9 @@
             calculateBMI();
         }
 
-        // 保存所有数据（手动保存按钮）
         function saveAllData() {
             const record = Storage.getRecord(currentDate);
             
-            // 收集所有数据
             record.calories = parseInt(document.getElementById('calorieInput').value) || 0;
             record.water = parseInt(document.getElementById('waterInput').value) || 0;
             record.sleep = parseFloat(document.getElementById('sleepHours').value) || 0;
@@ -765,7 +909,6 @@
             record.steps = parseInt(document.getElementById('dailySteps').value) || null;
             record.note = document.getElementById('dailyNote').value || '';
             
-            // 饮食结构
             const c = parseInt(document.getElementById('macroC').value) || 0;
             const p = parseInt(document.getElementById('macroP').value) || 0;
             const f = parseInt(document.getElementById('macroF').value) || 0;
@@ -775,13 +918,11 @@
             
             Storage.saveRecord(currentDate, record);
             
-            // 记录保存时间
             const now = new Date();
             const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
             localStorage.setItem('feed_last_saved_' + currentDate, timeStr);
             document.getElementById('lastSaved').textContent = '上次保存: ' + timeStr;
             
-            // 更新显示
             updateCalorieProgress(record.calories);
             updateWaterDisplay(record.water);
             updateWeeklyCardio();
@@ -800,7 +941,6 @@
             }
         }
 
-        // 热量相关
         function updateCalorieDisplay() {
             const val = parseInt(document.getElementById('calorieInput').value) || 0;
             document.getElementById('currentCaloriesDisplay').textContent = val;
@@ -814,7 +954,6 @@
             document.getElementById('caloriePercentage').textContent = Math.round(pct) + '%';
         }
 
-        // 饮水相关
         function updateWaterDisplayTemp() {
             const val = parseInt(document.getElementById('waterInput').value) || 0;
             updateWaterDisplay(val);
@@ -852,7 +991,6 @@
             }
         }
 
-        // 有氧
         function updateWeeklyCardio() {
             const weekData = getWeekData(currentDate);
             const total = weekData.reduce((sum, r) => sum + (r.cardio || 0), 0);
@@ -881,7 +1019,6 @@
             return weekDates.map(d => all.records[d] || { date: d, cardio: 0, weight: null });
         }
 
-        // 饮食结构
         function validateMacros() {
             const c = parseInt(document.getElementById('macroC').value) || 0;
             const p = parseInt(document.getElementById('macroP').value) || 0;
@@ -902,11 +1039,9 @@
             document.getElementById('barF').style.width = f + '%';
         }
 
-        // 评分
         function setRating(category, value) {
             const record = Storage.getRecord(currentDate);
             record.ratings[category] = value;
-            // 注意：评分立即保存，其他数据手动保存
             Storage.saveRecord(currentDate, record);
             highlightRating(category, value);
             showToast(`${category}: ${value}分`);
@@ -921,7 +1056,6 @@
             }
         }
 
-        // 标签
         function addTag(tag) {
             const textarea = document.getElementById('dailyNote');
             if (!textarea.value.includes(tag)) {
@@ -929,7 +1063,6 @@
             }
         }
 
-        // 视图切换
         function switchView(view) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`view-${view}`).classList.add('active');
@@ -977,7 +1110,6 @@
             });
         }
 
-        // 月份选择
         function toggleMonthPicker() {
             const picker = document.getElementById('monthPicker');
             picker.classList.toggle('hidden');
@@ -986,7 +1118,6 @@
         function selectMonth(m, btnElement) {
             currentMonth = m;
             
-            // 更新按钮样式
             document.querySelectorAll('.month-btn').forEach(btn => {
                 btn.classList.remove('active', 'border-stone-800', 'text-white');
                 btn.classList.add('border-stone-200', 'text-stone-600');
@@ -997,8 +1128,6 @@
             }
             
             document.getElementById('monthPicker').classList.add('hidden');
-            
-            // 切换到该月的第一天
             currentDate = `2026-${String(m).padStart(2,'0')}-01`;
             loadToday();
             updateHeaderDate();
@@ -1006,7 +1135,6 @@
             showToast(`已切换至 ${m} 月`);
         }
 
-        // 绘制周体重趋势
         function drawWeekChart() {
             const canvas = document.getElementById('weekChart');
             const ctx = canvas.getContext('2d');
@@ -1051,7 +1179,6 @@
             const minW = Math.min(...weights) * 0.98;
             const maxW = Math.max(...weights) * 1.02;
             
-            // 网格
             ctx.strokeStyle = '#E8E0D5';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 4; i++) {
@@ -1062,7 +1189,6 @@
                 ctx.stroke();
             }
             
-            // 折线
             ctx.strokeStyle = '#2C2C2C';
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
@@ -1081,7 +1207,6 @@
             });
             ctx.stroke();
             
-            // 点和标签
             points.forEach(p => {
                 ctx.fillStyle = '#2C2C2C';
                 ctx.beginPath();
@@ -1096,7 +1221,6 @@
             });
         }
 
-        // 月度日历
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendar');
             grid.innerHTML = '';
@@ -1161,10 +1285,31 @@
             updateHeaderDate();
             checkIfToday();
             showToast('已切换至 ' + dateStr);
-            // 如果是月度视图，切换回今日记录视图
             if (document.getElementById('view-monthly').classList.contains('active')) {
                 switchView('daily');
             }
+        }
+
+        // 使用说明相关
+        function showHelp() {
+            document.getElementById('helpModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function startTutorial() {
+            document.getElementById('firstTimeModal').classList.add('hidden');
+            Storage.setSeenTutorial();
+            showHelp();
+        }
+
+        function closeFirstTime() {
+            document.getElementById('firstTimeModal').classList.add('hidden');
+            Storage.setSeenTutorial();
         }
 
         // 数据导出导入
